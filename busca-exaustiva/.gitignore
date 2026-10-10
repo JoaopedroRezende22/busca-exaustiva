@@ -1,0 +1,19 @@
+# Executáveis
+
+build/
+09_forcabruta
+09_forcabruta_omp
+09_forcabruta_mpi
+
+# Arquivos temporários
+
+*.o
+*.out
+*.tmp
+*.log
+
+# Configurações locais
+
+.vscode/
+.DS_Store
+Thumbs.db
