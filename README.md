@@ -4,23 +4,20 @@
 
 Este projeto foi desenvolvido para a disciplina de Programação Paralela.
 
-O objetivo é implementar e analisar o desempenho de um algoritmo
-de busca exaustiva (força bruta) utilizando três abordagens:
+O objetivo é implementar e analisar o desempenho de um algoritmo de busca exaustiva (força bruta) utilizando três abordagens:
 
 - Sequencial (Baseline)
 - Paralela com OpenMP
 - Paralela com MPI
 
-O projeto busca comparar o tempo de execução, o speedup, a eficiência
-e o comportamento das implementações diante de diferentes espaços
-de busca e quantidades de trabalhadores.
+O projeto busca comparar o tempo de execução, o speedup, a eficiência e o comportamento das implementações diante de diferentes espaços de busca e quantidades de trabalhadores.
 
 ## 2. Objetivos
 
 - Implementar o algoritmo sequencial como referência.
 - Desenvolver uma versão paralela utilizando OpenMP.
 - Desenvolver uma versão paralela utilizando MPI.
-- Verificar se as implementações encontram a mesma chave.
+- Verificar se as implementações encontram a chave esperada.
 - Avaliar o desempenho com diferentes espaços de busca.
 - Analisar speedup, eficiência e escalabilidade.
 - Investigar os efeitos da parada antecipada.
@@ -29,99 +26,85 @@ de busca e quantidades de trabalhadores.
 
 ```text
 busca-exaustiva/
-│
 ├── src/
 │   ├── sequencial/
 │   │   └── forca_bruta.cpp
-│   │
-│   ├── openmp/                    # Em desenvolvimento
-│   │
+│   ├── openmp/
+│   │   └── forca_bruta_openmp.cpp
 │   └── mpi/                       # Em desenvolvimento
-│
 ├── scripts/
 │   ├── teste_sequencial.sh
 │   └── analisar_sequencial.py
-│
 ├── resultados/
-│   └── sequencial.csv
-│
+│   ├── sequencial.csv
+│   └── openmp.csv
 ├── graficos/
-│
 ├── Makefile
+├── Dockerfile
 ├── README.md
 ├── AUTORES.md
 └── .gitignore
 ```
 
-As pastas OpenMP e MPI serão adicionadas conforme as
-implementações paralelas forem desenvolvidas.
+A implementação sequencial serve como referência para os experimentos. A implementação OpenMP já foi desenvolvida e testada no Docker. A implementação MPI permanece em desenvolvimento.
 
 ## 4. Ambiente de desenvolvimento
 
-O projeto utiliza o ambiente de laboratório disponibilizado
-pelo professor, executado por meio do Docker.
+O projeto utiliza C++ e ferramentas de compilação e execução em um ambiente Docker baseado em Ubuntu.
 
 Ferramentas utilizadas:
 
-- Linguagem C++17
-- Compilador G++ 13.3.0
+- C++17
+- G++
 - GNU Make
+- OpenMP
 - Docker
 - Visual Studio Code
 - Bash
-- Python 3 (apenas para análise estatística)
+- Python 3 para análise estatística
 
-As implementações paralelas utilizarão OpenMP e MPI.
-
-O Python não é utilizado na implementação do algoritmo
-de busca, apenas no processamento dos resultados experimentais.
+O Python é utilizado no processamento e na análise dos resultados experimentais, não na implementação do algoritmo de busca.
 
 ## 5. Implementação sequencial (Baseline)
 
-O algoritmo sequencial realiza uma busca exaustiva
-em um espaço de candidatos.
+O algoritmo sequencial realiza uma busca exaustiva em um espaço de candidatos.
 
 Seu funcionamento consiste em:
 
 1. Receber o tamanho do espaço de busca.
-2. Definir o alvo utilizando a função de hash do programa.
+2. Definir o alvo utilizando a função hash do programa.
 3. Percorrer os candidatos sequencialmente.
-4. Comparar o resultado da função de hash com o alvo.
+4. Comparar o resultado da função hash com o alvo.
 5. Interromper a busca quando a chave for encontrada.
 6. Apresentar a chave e o tempo de execução.
 
-O alvo é definido a partir de:
+O alvo é definido por:
 
 ```cpp
 alvo = h(ESPACO / 3);
 ```
 
-Dessa forma, para um espaço de 60 milhões, a chave
-esperada é 20 milhões.
+Por exemplo, para um espaço de 60 milhões de candidatos, a chave esperada é 20 milhões.
 
-### 5.1 Compilação
+### 5.1. Compilação
 
-No terminal do ambiente Docker, acesse o projeto:
-
-```bash
-cd /workspace/busca-exaustiva
-```
-
-Compile utilizando:
+Na raiz do projeto, execute:
 
 ```bash
 make
 ```
 
-Para remover os arquivos compilados:
+O comando compila as versões sequencial e OpenMP.
+
+Para remover os executáveis gerados:
 
 ```bash
 make clean
 ```
 
-### 5.2 Execução
+### 5.2. Execução
 
-Execute o programa:
+Execute a versão sequencial com um espaço de busca de 60 milhões:
 
 ```bash
 ./build/forca_bruta 60000000
@@ -130,17 +113,37 @@ Execute o programa:
 Exemplo de saída:
 
 ```text
-espaco=60000000  chave=20000000  tempo=0.020584 s
+espaco=60000000 chave=20000000 tempo=0.020584 s
 ```
 
-O tempo apresentado corresponde a uma execução realizada
-durante os testes e pode variar entre execuções.
+O tempo é um exemplo de execução anterior e pode variar conforme o ambiente.
 
-### 5.3 Execução da versão OpenMP
+## 6. Implementação paralela com OpenMP
 
-A versão paralela utiliza OpenMP para distribuir a busca entre múltiplas threads. Os argumentos são o tamanho do espaço de busca (`ESPACO`) e a quantidade de threads (`NUM_THREADS`).
+**Status: desenvolvida e testada no Docker.**
 
-Execute com 4 threads e espaço de busca de 60 milhões:
+Arquivo principal:
+
+```text
+src/openmp/forca_bruta_openmp.cpp
+```
+
+A implementação utiliza OpenMP para distribuir a busca entre múltiplas threads.
+
+O programa recebe dois argumentos:
+
+- `ESPACO`: tamanho do espaço de busca.
+- `NUM_THREADS`: quantidade de threads solicitada.
+
+A distribuição é feita por intervalos contíguos, sem sobreposição. Cada thread percorre seu intervalo e calcula a função hash dos candidatos.
+
+A implementação utiliza `std::atomic` para compartilhar a informação de que uma chave foi encontrada. As threads verificam periodicamente esse estado para interromper a busca antecipadamente. A medição do tempo utiliza `omp_get_wtime()` e inclui a região paralela.
+
+A chave encontrada é validada antes de o programa terminar com sucesso.
+
+### 6.1. Execução
+
+Depois de compilar com `make`, execute:
 
 ```bash
 ./build/forca_bruta_openmp 60000000 4
@@ -152,28 +155,49 @@ Exemplo de saída:
 espaco=60000000 threads=4 chave=20000000 tempo=0.00537835 s
 ```
 
-O tempo é ilustrativo de uma execução realizada durante os testes e pode variar conforme o ambiente.
+O tempo acima é ilustrativo e pode variar entre execuções.
 
-Outros exemplos:
+Outros tamanhos de espaço de busca podem ser testados:
 
 ```bash
 ./build/forca_bruta_openmp 30000000 4
 ./build/forca_bruta_openmp 120000000 4
 ```
 
-Para comparar com a versão sequencial, utilize o mesmo espaço de busca:
+Para comparar as versões com o mesmo espaço de busca:
 
 ```bash
 ./build/forca_bruta 60000000
 ./build/forca_bruta_openmp 60000000 4
 ```
 
-## 6. Testes automatizados
+### 6.2. Execução no Docker
 
-Foi desenvolvido um script Bash para automatizar
-os experimentos da implementação sequencial.
+Na raiz do projeto, construa a imagem:
 
-Arquivo:
+```bash
+docker build -t busca-exaustiva .
+```
+
+Compile as versões dentro do container:
+
+```bash
+docker run --rm busca-exaustiva make
+```
+
+Para compilar e executar a versão OpenMP no mesmo container:
+
+```bash
+docker run --rm busca-exaustiva bash -c "make && ./build/forca_bruta_openmp 60000000 4"
+```
+
+Como o container criado com `--rm` é removido ao final, os arquivos compilados dentro dele não permanecem disponíveis para a próxima execução. Por isso, o exemplo compila e executa no mesmo comando.
+
+## 7. Testes e resultados experimentais
+
+### 7.1. Testes sequenciais
+
+O script de testes sequenciais está localizado em:
 
 ```text
 scripts/teste_sequencial.sh
@@ -185,39 +209,49 @@ Para executar:
 bash scripts/teste_sequencial.sh
 ```
 
-O script:
+O script automatiza os testes da implementação sequencial, realiza cinco repetições por configuração, verifica a chave esperada e registra os resultados em:
 
-- Compila o programa, caso necessário.
-- Executa a busca em diferentes espaços.
-- Realiza cinco repetições por configuração.
-- Verifica se a chave encontrada é a esperada.
-- Registra os resultados em um arquivo CSV.
+```text
+resultados/sequencial.csv
+```
 
-### 6.1 Configurações iniciais
+As configurações iniciais são:
 
 | Espaço de busca | Chave esperada | Repetições |
-|---|---|---|
+|---:|---:|---:|
 | 30.000.000 | 10.000.000 | 5 |
 | 60.000.000 | 20.000.000 | 5 |
 | 120.000.000 | 40.000.000 | 5 |
 
 Total: 15 execuções.
 
-Os resultados são armazenados em:
+A execução do script substitui o conteúdo anterior de `resultados/sequencial.csv`.
+
+### 7.2. Resultados OpenMP
+
+Os resultados das execuções OpenMP estão registrados em:
 
 ```text
-resultados/sequencial.csv
+resultados/openmp.csv
 ```
 
-A execução do script substitui o conteúdo anterior
-desse arquivo.
+O arquivo contém as seguintes informações:
 
-## 7. Análise estatística
+- Tamanho do espaço de busca.
+- Quantidade de threads.
+- Número da execução.
+- Chave encontrada.
+- Tempo de execução em segundos.
 
-Foi criado um script auxiliar em Python para analisar
-os tempos registrados no arquivo CSV.
+Foram realizados testes com espaços de busca de 30 milhões, 60 milhões e 120 milhões, utilizando diferentes quantidades de threads.
 
-Arquivo:
+Para o espaço de 60 milhões, os testes incluem configurações com 1, 2, 4, 8 e 12 threads. Os demais testes registrados incluem quatro repetições com 4 threads para os espaços de 30 milhões e 120 milhões.
+
+Os tempos são medições experimentais e podem variar em função da carga do sistema, da criação das threads e das condições de execução.
+
+### 7.3. Análise estatística
+
+O script auxiliar de análise estatística está localizado em:
 
 ```text
 scripts/analisar_sequencial.py
@@ -229,55 +263,52 @@ Para executar:
 python3 scripts/analisar_sequencial.py
 ```
 
-O script calcula:
+Esse script foi desenvolvido para analisar os resultados sequenciais, calculando:
 
-- Tempo médio
-- Menor tempo
-- Maior tempo
-- Desvio padrão amostral
+- Tempo médio.
+- Menor tempo.
+- Maior tempo.
+- Desvio padrão amostral.
 
-### 7.1 Resultados preliminares
+A análise estatística dos resultados OpenMP deverá considerar separadamente as diferentes quantidades de threads e os tamanhos de espaço de busca.
 
-Os primeiros experimentos do algoritmo sequencial
-apresentaram os seguintes resultados:
+## 8. Análise de desempenho
 
-| Espaço | Tempo médio (s) | Desvio padrão (s) |
-|---|---|---|
-| 30 milhões | 0.014647 | 0.001732 |
-| 60 milhões | 0.024387 | 0.002253 |
-| 120 milhões | 0.050546 | 0.005301 |
+As implementações devem ser comparadas utilizando o mesmo tamanho de espaço de busca e condições experimentais equivalentes.
 
-Os resultados indicam aumento do tempo de execução
-conforme o espaço de busca cresce.
+### 8.1. Tempo de execução
 
-Esses dados são preliminares e não representam
-necessariamente os resultados definitivos do projeto.
+Representa o tempo necessário para concluir a busca.
 
-## 8. Implementação OpenMP
+### 8.2. Speedup
 
-Status: Implementação desenvolvida e testada no Docker.
+Indica a aceleração obtida pela implementação paralela:
 
-A versão OpenMP utilizará múltiplas threads para
-distribuir o espaço de busca.
+\[
+S = \frac{T_{\text{sequencial}}}{T_{\text{paralelo}}}
+\]
 
-Requisitos previstos:
+### 8.3. Eficiência
 
-- Manter a lógica do algoritmo sequencial.
-- Permitir configurar a quantidade de threads.
-- Distribuir os candidatos entre as threads.
-- Garantir sincronização segura.
-- Implementar parada antecipada.
-- Registrar o tempo de execução.
-- Validar a chave encontrada.
+Relaciona o speedup à quantidade de unidades de processamento utilizadas:
 
-Serão avaliadas diferentes quantidades de threads.
+\[
+E = \frac{S}{P}
+\]
+
+Em que \(P\) representa a quantidade de threads ou processos considerados na comparação.
+
+### 8.4. Escalabilidade
+
+Avalia como o desempenho varia quando o tamanho do problema ou a quantidade de unidades de processamento aumenta.
+
+Os resultados devem ser interpretados considerando a variação natural dos tempos de execução. A implementação OpenMP não precisa apresentar aceleração proporcional ao número de threads, pois existem custos de paralelização e sincronização.
 
 ## 9. Implementação MPI
 
-Status: Em desenvolvimento.
+**Status: em desenvolvimento.**
 
-A implementação MPI seguirá uma arquitetura
-mestre-trabalhadores.
+A implementação MPI seguirá a abordagem mestre-trabalhadores.
 
 Requisitos previstos:
 
@@ -291,37 +322,7 @@ Requisitos previstos:
 
 Serão avaliadas diferentes quantidades de processos.
 
-## 10. Métricas de desempenho
-
-As implementações serão comparadas utilizando
-as seguintes métricas:
-
-### Tempo de execução
-
-Tempo necessário para realizar a busca.
-
-### Speedup
-
-Indica a aceleração obtida pela implementação paralela:
-
-S = T_sequencial / T_paralelo
-
-### Eficiência
-
-Relaciona o speedup à quantidade de trabalhadores:
-
-E = S / P
-
-Onde P representa a quantidade de unidades
-de processamento considerada na análise.
-
-### Escalabilidade
-
-Avalia o comportamento do desempenho quando
-aumentamos o tamanho do problema ou a quantidade
-de trabalhadores.
-
-## 11. Situação atual
+## 10. Situação atual
 
 | Etapa | Status |
 |---|---|
@@ -330,27 +331,22 @@ de trabalhadores.
 | Implementação sequencial | Concluída |
 | Compilação com Makefile | Concluída |
 | Testes automatizados do sequencial | Concluída |
-| Registro dos resultados em CSV | Concluída |
-| Análise estatística inicial | Concluída |
+| Registro dos resultados sequenciais em CSV | Concluído |
 | Implementação OpenMP | Desenvolvida e testada |
+| Registro dos resultados OpenMP em CSV | Concluído |
+| Análise estatística inicial do sequencial | Concluída |
 | Implementação MPI | Em desenvolvimento |
-| Comparação das três versões | Pendente |
+| Comparação final das três versões | Pendente |
 | Gráficos finais | Pendente |
 
-## 12. Considerações
+## 11. Considerações finais
 
-O algoritmo sequencial servirá como referência
-para a avaliação das versões OpenMP e MPI.
+O algoritmo sequencial serve como referência para a avaliação das versões paralelas.
 
-As comparações deverão utilizar entradas equivalentes,
-condições experimentais documentadas e múltiplas
-execuções para reduzir a influência de variações
-ocasionais no tempo de processamento.
+A implementação OpenMP foi desenvolvida com distribuição de trabalho entre threads, sincronização atômica e parada antecipada. Os resultados experimentais são registrados em CSV para permitir análises posteriores.
 
-Os resultados finais serão apresentados após
-a implementação e validação das versões paralelas.
+A comparação final deverá utilizar entradas equivalentes, múltiplas execuções e condições experimentais documentadas. A análise completa de desempenho será finalizada após o desenvolvimento e a validação da implementação MPI.
 
-## 13. Integrantes
+## 12. Integrantes
 
-As informações dos integrantes e suas responsabilidades
-estão disponíveis no arquivo AUTORES.md.
+As informações dos integrantes e suas responsabilidades estão disponíveis no arquivo `AUTORES.md`.
