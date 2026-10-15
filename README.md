@@ -136,6 +136,38 @@ espaco=60000000  chave=20000000  tempo=0.020584 s
 O tempo apresentado corresponde a uma execução realizada
 durante os testes e pode variar entre execuções.
 
+### 5.3 Execução da versão OpenMP
+
+A versão paralela utiliza OpenMP para distribuir a busca entre múltiplas threads. Os argumentos são o tamanho do espaço de busca (`ESPACO`) e a quantidade de threads (`NUM_THREADS`).
+
+Execute com 4 threads e espaço de busca de 60 milhões:
+
+```bash
+./build/forca_bruta_openmp 60000000 4
+```
+
+Exemplo de saída:
+
+```text
+espaco=60000000 threads=4 chave=20000000 tempo=0.00537835 s
+```
+
+O tempo é ilustrativo de uma execução realizada durante os testes e pode variar conforme o ambiente.
+
+Outros exemplos:
+
+```bash
+./build/forca_bruta_openmp 30000000 4
+./build/forca_bruta_openmp 120000000 4
+```
+
+Para comparar com a versão sequencial, utilize o mesmo espaço de busca:
+
+```bash
+./build/forca_bruta 60000000
+./build/forca_bruta_openmp 60000000 4
+```
+
 ## 6. Testes automatizados
 
 Foi desenvolvido um script Bash para automatizar
@@ -223,7 +255,7 @@ necessariamente os resultados definitivos do projeto.
 
 ## 8. Implementação OpenMP
 
-Status: Em desenvolvimento.
+Status: Implementação desenvolvida e testada no Docker.
 
 A versão OpenMP utilizará múltiplas threads para
 distribuir o espaço de busca.
@@ -300,7 +332,7 @@ de trabalhadores.
 | Testes automatizados do sequencial | Concluída |
 | Registro dos resultados em CSV | Concluída |
 | Análise estatística inicial | Concluída |
-| Implementação OpenMP | Em desenvolvimento |
+| Implementação OpenMP | Desenvolvida e testada |
 | Implementação MPI | Em desenvolvimento |
 | Comparação das três versões | Pendente |
 | Gráficos finais | Pendente |
