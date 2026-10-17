@@ -1,19 +1,56 @@
-# Executáveis
+# ==========================================
+# EXECUTÁVEIS E ARQUIVOS COMPILADOS
+# ==========================================
 
 build/
+
 09_forcabruta
 09_forcabruta_omp
 09_forcabruta_mpi
 
-# Arquivos temporários
-
 *.o
 *.out
+*.exe
+
+
+# ==========================================
+# ARQUIVOS TEMPORÁRIOS
+# ==========================================
+
 *.tmp
 *.log
+*.bak
+*~
 
-# Configurações locais
+
+# ==========================================
+# PYTHON
+# ==========================================
+
+__pycache__/
+*.pyc
+
+.venv/
+venv/
+
+
+# ==========================================
+# CONFIGURAÇÕES LOCAIS
+# ==========================================
 
 .vscode/
 .DS_Store
 Thumbs.db
+
+
+# ==========================================
+# BACKUPS DOS EXPERIMENTOS
+# ==========================================
+
+resultados/*backup*.csv
+resultados/*versao_antiga*.csv
+
+*.pdf
+*.png
+
+
